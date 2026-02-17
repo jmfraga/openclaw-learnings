@@ -59,8 +59,10 @@ This document describes a production multi-agent architecture built on OpenClaw,
   - Complex architectural decisions
   - Research and analysis
   - Long-form strategic recommendations
+  - Public-facing content creation (landing pages, public sites)
 - **Delegation Pattern:** Called by PM for strategic matters
 - **Why Sonnet:** Requires sophisticated reasoning and strategic depth
+- **Integrations:** GitHub (individual SSH key for public pages and landing pages)
 
 ### 3. **CHAPPiE (Technical Operations)**
 - **Model:** Claude Sonnet 4.5
@@ -299,14 +301,26 @@ Specialized Agent → PM → User
 ### 2. GitHub
 
 **Purpose:** Code and project management  
-**Agents using:** CHAPPiE (primary), PM  
+**Agents using:** CHAPPiE (primary), Phoenix, PM  
+**Access Model:** Individual SSH keys per agent for security and audit trail
+
+**Agent-specific usage:**
+- **CHAPPiE:** Primary technical implementation (`chappie_github` SSH key)
+  - Code development and modifications
+  - Repository management
+  - Technical documentation
+- **Phoenix:** Public-facing content (individual SSH key)
+  - Landing pages and public sites
+  - Marketing and strategic content
+  - Public documentation
+
 **Capabilities:**
 - Clone, commit, push repositories
 - Issue creation and management
 - Pull request operations
 - Branch management
 
-**Security:** SSH keys or personal access tokens, scoped per agent
+**Security:** Each agent has dedicated SSH keys for isolation and accountability
 
 ### 3. WhatsApp Groups
 
