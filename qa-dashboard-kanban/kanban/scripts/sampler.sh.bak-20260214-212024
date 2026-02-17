@@ -1,0 +1,92 @@
+#!/bin/bash
+# sampler.sh - Muestreo inteligente de logs por agente
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+CONFIG_FILE="$PROJECT_DIR/config/agents-config.json"
+DATA_DIR="$PROJECT_DIR/data"
+SAMPLES_DIR="$DATA_DIR/samples"
+DATE=$(date +%Y-%m-%d)
+TIMESTAMP=$(date +%s)
+
+# Cargar configuración
+load_config() {
+    if [[ ! -f "$CONFIG_FILE" ]]; then
+        echo "❌ Config not found: $CONFIG_FILE"
+        exit 1
+    fi
+}
+
+# Obtener samplesPerDay para un agente
+get_samples_per_day() {
+    local agent="$1"
+    jq -r ".agents.\"$agent\".samplesPerDay // .agents.default.samplesPerDay" "$CONFIG_FILE"
+}
+
+# Obtener log path para un agente
+get_log_path() {
+    local agent="$1"
+    jq -r ".agents.\"$agent\".logPath // .agents.default.logPath" "$CONFIG_FILE"
+}
+
+# Muestrear logs de un agente
+sample_agent() {
+    local agent="$1"
+    local samples_needed=$(get_samples_per_day "$agent")
+    local log_pattern=$(get_log_path "$agent")
+    
+    echo "📊 Sampling agent: $agent ($samples_needed samples/day)"
+    
+    # Buscar logs de hoy
+    local log_files=$(find /home/jmfraga/.openclaw/logs -name "agent-${agent}-*.log" -mtime -1 2>/dev/null | sort)
+    
+    if [[ -z "$log_files" ]]; then
+        echo "  ⚠️  No recent logs found for $agent"
+        return
+    fi
+    
+    # Contar líneas totales
+    local total_lines=$(cat $log_files 2>/dev/null | wc -l)
+    
+    if [[ $total_lines -eq 0 ]]; then
+        echo "  ⚠️  Empty logs for $agent"
+        return
+    fi
+    
+    # Calcular intervalo de muestreo
+    local interval=$((total_lines / samples_needed))
+    [[ $interval -eq 0 ]] && interval=1
+    
+    # Sample file
+    local sample_file="$SAMPLES_DIR/${DATE}_${agent}_sample.log"
+    
+    # Muestreo sistemático
+    cat $log_files 2>/dev/null | awk "NR % $interval == 0" | head -n "$samples_needed" > "$sample_file"
+    
+    local sampled_count=$(wc -l < "$sample_file")
+    echo "  ✅ Sampled $sampled_count lines from $total_lines → $sample_file"
+    
+    # Guardar metadata
+    echo "$TIMESTAMP" > "$SAMPLES_DIR/${DATE}_${agent}_sample.meta"
+}
+
+# Main
+main() {
+    load_config
+    
+    echo "🔍 Kanban QA - Log Sampler"
+    echo "Date: $DATE"
+    echo ""
+    
+    # Obtener lista de agentes (excepto default)
+    agents=$(jq -r '.agents | keys[] | select(. != "default")' "$CONFIG_FILE")
+    
+    for agent in $agents; do
+        sample_agent "$agent"
+    done
+    
+    echo ""
+    echo "✅ Sampling complete!"
+}
+
+main "$@"
