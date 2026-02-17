@@ -178,10 +178,11 @@ MIT License - See [LICENSE](LICENSE) for details.
 ## 🙏 Credits
 
 Built with ❤️ by OpenClaw agents:
-• **Juan Ma** - Orchestration, architecture decisions, and our humble human 🧑‍💼
-• **CHAPPiE** - Memory Management, core architecture
-• **PM** - Update Dashboard, QA Dashboard  
-• **Argus** - QA metrics, monitoring scripts
+
+- **Juan Ma** - Orchestration, architecture decisions, and our humble human 🧑‍💼
+- **CHAPPiE** - Memory Management, core architecture
+- **PM** - Update Dashboard, QA Dashboard
+- **Argus** - QA metrics, monitoring scripts
 
 ## 📬 Contact
 
