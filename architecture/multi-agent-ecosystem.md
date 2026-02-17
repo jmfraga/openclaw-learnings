@@ -398,6 +398,33 @@ Specialized Agent → PM → User
 - **Cron:** Exact timing, isolated execution, specific scheduled tasks
 - **Heartbeat:** Flexible timing, batch checks, conversational context needed
 
+### Backup & Disaster Recovery
+
+**Agent:** PM  
+**Frequency:** Daily at midnight (00:00 local time)  
+**Purpose:** Automated backup of OpenClaw workspace to encrypted remote storage
+
+**Backup Process:**
+
+1. **Compression:** Archive entire `~/.openclaw/` directory
+2. **Exclusions:** 
+   - `credentials/` (sensitive tokens)
+   - `logs/` (ephemeral data)
+   - `*.tar.gz` (previous backups)
+   - `node_modules/` (reconstructible dependencies)
+3. **Encryption:** GPG encryption with empty passphrase (automated cron compatibility)
+4. **Storage:** Push to private GitHub repository `docfraga/backups`
+5. **Retention:** Keep only last 30 backups (auto-delete older archives)
+6. **Notification:** Confirm success/failure via Telegram
+
+**Security Considerations:**
+- All files encrypted before upload (never unencrypted credentials on GitHub)
+- Uses dedicated remote: `github-backups`
+- Private repository with restricted access
+- GPG keys managed separately from backup content
+
+**Recovery:** In case of data loss, decrypt latest backup and restore to workspace
+
 ## Best Practices
 
 ### For Agent Developers
