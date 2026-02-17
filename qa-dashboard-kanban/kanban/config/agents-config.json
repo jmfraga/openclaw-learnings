@@ -1,0 +1,76 @@
+{
+  "weeklyLimit": 50000,
+  "warningThreshold": 0.8,
+  "criticalThreshold": 0.95,
+  "agents": {
+    "default": {
+      "samplesPerDay": 20,
+      "errorThreshold": 0.05,
+      "warningThreshold": 0.02
+    },
+    "pm": {
+      "name": "PM",
+      "model": "claude-sonnet-4-5",
+      "role": "coordinator",
+      "samplesPerDay": 30,
+      "errorThreshold": 0.03,
+      "warningThreshold": 0.01
+    },
+    "phoenix": {
+      "name": "Phoenix",
+      "model": "claude-haiku-4-5",
+      "role": "communications",
+      "samplesPerDay": 25,
+      "errorThreshold": 0.05,
+      "warningThreshold": 0.02
+    },
+    "iris-assistant": {
+      "name": "Iris Assistant",
+      "model": "claude-haiku-4-5",
+      "role": "medical-assistant",
+      "samplesPerDay": 20,
+      "errorThreshold": 0.04,
+      "warningThreshold": 0.02
+    },
+    "iris-med": {
+      "name": "Iris Med",
+      "model": "claude-sonnet-4-5",
+      "role": "medical-specialist",
+      "samplesPerDay": 25,
+      "errorThreshold": 0.03,
+      "warningThreshold": 0.01
+    },
+    "chappie": {
+      "name": "CHAPPiE",
+      "model": "claude-sonnet-4-5",
+      "role": "developer",
+      "samplesPerDay": 20,
+      "errorThreshold": 0.04,
+      "warningThreshold": 0.02
+    },
+    "argus": {
+      "name": "Argus",
+      "model": "claude-haiku-4-5",
+      "role": "qa-monitor",
+      "samplesPerDay": 30,
+      "errorThreshold": 0.02,
+      "warningThreshold": 0.01
+    },
+    "atlas": {
+      "name": "Atlas",
+      "model": "claude-haiku-4-5",
+      "role": "research",
+      "samplesPerDay": 20,
+      "errorThreshold": 0.05,
+      "warningThreshold": 0.02
+    },
+    "quill": {
+      "name": "Quill",
+      "model": "claude-haiku-4-5",
+      "role": "medical-writer",
+      "samplesPerDay": 20,
+      "errorThreshold": 0.04,
+      "warningThreshold": 0.02
+    }
+  }
+}
