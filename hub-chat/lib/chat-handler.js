@@ -104,9 +104,18 @@ function extractResponseText(output) {
 async function sendMessageToAgent(agentId, message, sessionKey) {
     try {
         const sessionArg = sessionKey ? `--session-id "${sessionKey}"` : '';
-        const cmd = `openclaw agent --agent "${agentId}" ${sessionArg} --message "${message.replace(/"/g, '\\"')}" --json 2>&1`;
         
-        console.log(`[CHAT] Executing: ${cmd}`);
+        // Robust escaping for shell injection and special characters
+        const escapedMsg = message
+            .replace(/\\/g, '\\\\')  // Backslash
+            .replace(/"/g, '\\"')     // Double quote
+            .replace(/`/g, '\\`')     // Backtick
+            .replace(/\$/g, '\\$')    // Dollar sign
+            .replace(/!/g, '\\!');    // Exclamation mark
+        
+        const cmd = `openclaw agent --agent "${agentId}" ${sessionArg} --message "${escapedMsg}" --json 2>&1`;
+        
+        console.log(`[CHAT] Executing command for agent: ${agentId}, session: ${sessionKey || 'new'}`);
         const { stdout, stderr } = await execPromise(cmd, { timeout: 30000 });
         
         const responseText = extractResponseText(stdout || stderr);
@@ -201,6 +210,33 @@ async function handleSendMessage(req, res, agentId) {
                 // Send message to agent
                 const response = await sendMessageToAgent(agentId, message, actualSessionKey);
                 
+                // Save messages to session
+                const session = sessions[agentId].sessions.find(s => s.key === actualSessionKey);
+                if (session) {
+                    if (!session.messages) session.messages = [];
+                    
+                    // Add user message
+                    session.messages.push({
+                        role: 'user',
+                        text: message,
+                        ts: Date.now()
+                    });
+                    
+                    // Add agent response
+                    session.messages.push({
+                        role: 'agent',
+                        text: response.text,
+                        ts: Date.now()
+                    });
+                    
+                    // Keep only last 100 messages
+                    if (session.messages.length > 100) {
+                        session.messages = session.messages.slice(-100);
+                    }
+                    
+                    saveSessions(sessions);
+                }
+                
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({
                     sessionKey: actualSessionKey,
@@ -276,10 +312,41 @@ async function handleNewSession(req, res, agentId) {
     }
 }
 
+async function handleGetSessionMessages(req, res, agentId, sessionKey) {
+    try {
+        const sessions = loadSessions();
+        
+        if (!sessions[agentId]) {
+            res.writeHead(404, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Agent not found' }));
+            return;
+        }
+        
+        const session = sessions[agentId].sessions.find(s => s.key === sessionKey);
+        
+        if (!session) {
+            res.writeHead(404, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Session not found' }));
+            return;
+        }
+        
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+            messages: session.messages || []
+        }, null, 2));
+        
+    } catch (error) {
+        console.error('[CHAT] Error getting session messages:', error);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: error.message }));
+    }
+}
+
 module.exports = {
     handleGetAgents,
     handleGetSessions,
     handleSendMessage,
     handleNewSession,
+    handleGetSessionMessages,
     AGENTS
 };
