@@ -122,6 +122,9 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .session-item:hover {
@@ -131,6 +134,35 @@
         .session-item.active {
             background: var(--accent);
             color: var(--bg-primary);
+        }
+
+        .session-title {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .btn-delete-session {
+            display: block;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .session-item:hover .btn-delete-session {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .btn-delete-session:hover {
+            color: #ff4444 !important;
+            background: rgba(255, 68, 68, 0.15);
         }
 
         .sidebar-footer {
@@ -594,7 +626,10 @@
                 if (data.sessions && data.sessions.length > 0) {
                     container.innerHTML = data.sessions.slice(0, 3).map(session => `
                         <div class="session-item" onclick="selectSession('${agentId}', '${session.key}'); event.stopPropagation();">
-                            ${session.title.substring(0, 20)}...
+                            <span class="session-title">${session.title.substring(0, 20)}...</span>
+                            <button class="btn-delete-session" 
+                                    onclick="deleteSession('${agentId}', '${session.key}'); event.stopPropagation();"
+                                    title="Eliminar conversación">✕</button>
                         </div>
                     `).join('');
                 } else {
@@ -637,7 +672,7 @@
         }
 
         // Select a session
-        function selectSession(agentId, sessionKey) {
+        async function selectSession(agentId, sessionKey) {
             const agent = state.agents.find(a => a.id === agentId);
             state.currentAgent = agent;
             state.currentSession = { key: sessionKey };
@@ -648,6 +683,26 @@
             renderAgentsList();
             updateHeader();
             clearMessages();
+
+            // Load message history
+            try {
+                const res = await fetch(`/api/chat/${agentId}/sessions/${sessionKey}/messages`);
+                const data = await res.json();
+                
+                if (data.messages && data.messages.length > 0) {
+                    // Load each message from history
+                    data.messages.forEach(msg => {
+                        state.messages.push({ role: msg.role === 'user' ? 'user' : 'assistant', content: msg.text });
+                        addMessageToUI(msg.role === 'user' ? 'user' : 'agent', msg.text);
+                    });
+                } else {
+                    // Empty session
+                    addMessageToUI('agent', '↩️ Sesión retomada. ¿En qué te ayudo?');
+                }
+            } catch (error) {
+                console.error('Error loading session history:', error);
+                addMessageToUI('agent', '↩️ Sesión retomada. ¿En qué te ayudo?');
+            }
         }
 
         // Start new session
@@ -818,6 +873,37 @@
             if (confirm('¿Limpiar todo el historial de sesiones?')) {
                 // Implement if needed
                 alert('Funcionalidad en desarrollo');
+            }
+        }
+
+        // Delete a session
+        async function deleteSession(agentId, sessionKey) {
+            if (!confirm('¿Eliminar esta conversación?')) return;
+
+            try {
+                const response = await fetch(`/api/chat/${agentId}/sessions/${sessionKey}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.success || data.deleted) {
+                    console.log(`[CHAT] Session ${sessionKey} deleted successfully`);
+                    
+                    // If was the active session, clear the panel
+                    if (state.currentSession?.key === sessionKey) {
+                        state.currentSession = null;
+                        clearMessages();
+                    }
+                    
+                    // Reload sessions for this agent
+                    loadAgentSessions(agentId);
+                } else {
+                    showError('No se pudo eliminar la sesión');
+                }
+            } catch (error) {
+                console.error('Error deleting session:', error);
+                showError('Error al eliminar la sesión: ' + error.message);
             }
         }
 

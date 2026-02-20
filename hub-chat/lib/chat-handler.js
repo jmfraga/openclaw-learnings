@@ -51,8 +51,10 @@ function loadSessions() {
 function saveSessions(sessions) {
     try {
         fs.writeFileSync(SESSIONS_FILE, JSON.stringify(sessions, null, 2));
+        console.log(`[CHAT] ✅ Sessions saved successfully to ${SESSIONS_FILE}`);
     } catch (error) {
-        console.error('[CHAT] Error saving sessions:', error);
+        console.error(`[CHAT] ❌ Error saving sessions to ${SESSIONS_FILE}:`, error);
+        throw error; // Propagate error so caller knows save failed
     }
 }
 
@@ -103,22 +105,22 @@ function extractResponseText(output) {
 // Send message to agent via CLI
 async function sendMessageToAgent(agentId, message, sessionKey) {
     try {
-        const sessionArg = sessionKey ? `--session-id "${sessionKey}"` : '';
-        
-        // Robust escaping for shell injection and special characters
-        const escapedMsg = message
-            .replace(/\\/g, '\\\\')  // Backslash
-            .replace(/"/g, '\\"')     // Double quote
-            .replace(/`/g, '\\`')     // Backtick
-            .replace(/\$/g, '\\$')    // Dollar sign
-            .replace(/!/g, '\\!');    // Exclamation mark
-        
-        const cmd = `openclaw agent --agent "${agentId}" ${sessionArg} --message "${escapedMsg}" --json 2>&1`;
-        
+        // Use execFile (no shell) — avoids ALL escaping issues with special chars
+        const { execFile } = require('child_process');
+        const OPENCLAW_BIN = '/home/jmfraga/.npm-global/bin/openclaw';
+        const args = ['agent', '--agent', agentId, '--message', message, '--json'];
+        if (sessionKey) args.push('--session-id', sessionKey);
+
+        const stdout = await new Promise((resolve, reject) => {
+            execFile(OPENCLAW_BIN, args, { timeout: 120000 }, (err, stdout, stderr) => {
+                if (err) return reject(new Error(stderr || err.message));
+                resolve(stdout);
+            });
+        });
+
         console.log(`[CHAT] Executing command for agent: ${agentId}, session: ${sessionKey || 'new'}`);
-        const { stdout, stderr } = await execPromise(cmd, { timeout: 30000 });
         
-        const responseText = extractResponseText(stdout || stderr);
+        const responseText = extractResponseText(stdout);
         return {
             success: true,
             text: responseText,
@@ -342,11 +344,50 @@ async function handleGetSessionMessages(req, res, agentId, sessionKey) {
     }
 }
 
+async function handleDeleteSession(req, res, agentId, sessionKey) {
+    try {
+        const sessions = loadSessions();
+        
+        if (!sessions[agentId]) {
+            res.writeHead(404, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Agent not found' }));
+            return;
+        }
+        
+        const originalCount = sessions[agentId].sessions.length;
+        sessions[agentId].sessions = sessions[agentId].sessions.filter(s => s.key !== sessionKey);
+        const deletedCount = originalCount - sessions[agentId].sessions.length;
+        
+        // If deleted session was active, clear it
+        if (sessions[agentId].activeSesionKey === sessionKey) {
+            sessions[agentId].activeSesionKey = null;
+            console.log(`[CHAT] 🗑️ Deleted active session ${sessionKey} from ${agentId}`);
+        } else {
+            console.log(`[CHAT] 🗑️ Deleted session ${sessionKey} from ${agentId}`);
+        }
+        
+        saveSessions(sessions);
+        
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+            success: true,
+            deleted: deletedCount > 0,
+            message: deletedCount > 0 ? 'Session deleted' : 'Session not found'
+        }));
+        
+    } catch (error) {
+        console.error('[CHAT] Error deleting session:', error);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: error.message }));
+    }
+}
+
 module.exports = {
     handleGetAgents,
     handleGetSessions,
     handleSendMessage,
     handleNewSession,
     handleGetSessionMessages,
+    handleDeleteSession,
     AGENTS
 };
