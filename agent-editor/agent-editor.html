@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Editor - OpenClaw Hub</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: #0a0e27;
+            color: #e0e0e0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .header {
+            padding: 16px 24px;
+            background: #1a1f3a;
+            border-bottom: 1px solid #2a3050;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title {
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-status {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 180px 1fr 2fr;
+            flex: 1;
+            overflow: hidden;
+            gap: 0;
+            border-bottom: 1px solid #2a3050;
+        }
+
+        .panel {
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #2a3050;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 12px 16px;
+            background: #151a35;
+            border-bottom: 1px solid #2a3050;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #888;
+        }
+
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+
+        .agent-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .agent-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            transition: all 0.2s ease;
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .agent-item:hover {
+            background: rgba(100, 150, 255, 0.1);
+        }
+
+        .agent-item.active {
+            background: rgba(100, 150, 255, 0.2);
+            border-left-color: #6496ff;
+            font-weight: 600;
+        }
+
+        .file-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .file-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            transition: all 0.2s ease;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .file-item:hover {
+            background: rgba(100, 150, 255, 0.1);
+        }
+
+        .file-item.active {
+            background: rgba(100, 150, 255, 0.2);
+            border-left-color: #6496ff;
+            font-weight: 600;
+        }
+
+        .file-exists {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border-radius: 2px;
+            background: #10b981;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .file-missing {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border-radius: 2px;
+            background: #6b7280;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .editor-panel {
+            display: flex;
+            flex-direction: column;
+            border-right: none;
+        }
+
+        .editor-toolbar {
+            padding: 12px 16px;
+            background: #151a35;
+            border-bottom: 1px solid #2a3050;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .editor-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #e0e0e0;
+        }
+
+        .editor-meta {
+            font-size: 11px;
+            color: #888;
+        }
+
+        .editor-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        button {
+            padding: 6px 12px;
+            border: 1px solid #3a4050;
+            background: #1a2240;
+            color: #e0e0e0;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background: #2a3250;
+            border-color: #4a5060;
+        }
+
+        button.primary {
+            background: #6496ff;
+            border-color: #6496ff;
+            color: white;
+        }
+
+        button.primary:hover {
+            background: #7ea6ff;
+            border-color: #7ea6ff;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .editor-content {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        textarea {
+            flex: 1;
+            background: #0a0e27;
+            color: #e0e0e0;
+            border: none;
+            padding: 16px;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+        }
+
+        textarea::placeholder {
+            color: #555;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #666;
+            gap: 12px;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 14px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #10b981;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 4px;
+            font-size: 13px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.error {
+            background: #ef4444;
+        }
+
+        .toast.warning {
+            background: #f59e0b;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .loading {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .confirm-dialog {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .confirm-dialog-content {
+            background: #1a1f3a;
+            border: 1px solid #2a3050;
+            border-radius: 6px;
+            padding: 24px;
+            max-width: 400px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .confirm-dialog-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .confirm-dialog-message {
+            font-size: 14px;
+            color: #ccc;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .confirm-dialog-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .confirm-dialog-actions button {
+            padding: 8px 16px;
+        }
+
+        .refresh-indicator {
+            font-size: 11px;
+            color: #888;
+            padding: 0 8px;
+        }
+
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 150px 1fr;
+            }
+
+            .panel:nth-child(2) {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .panel {
+                display: none;
+            }
+
+            .panel.editor-panel {
+                display: flex;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-title">
+                <span>🧬</span>
+                <span>Agent Editor</span>
+            </div>
+            <div class="header-status" id="status">
+                <span>Cargando agentes...</span>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <!-- Panel 1: Agents -->
+            <div class="panel">
+                <div class="panel-header">🤖 Agentes</div>
+                <div class="panel-content">
+                    <div class="agent-list" id="agentList">
+                        <div style="padding: 16px 12px; color: #666; font-size: 12px;">
+                            Cargando...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel 2: Files -->
+            <div class="panel">
+                <div class="panel-header">📄 Archivos</div>
+                <div class="panel-content">
+                    <div class="file-list" id="fileList">
+                        <div style="padding: 16px 12px; color: #666; font-size: 12px;">
+                            Selecciona un agente
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel 3: Editor -->
+            <div class="panel editor-panel">
+                <div class="editor-toolbar">
+                    <div style="flex: 1;">
+                        <div class="editor-title" id="editorTitle">Agent Editor</div>
+                        <div class="editor-meta" id="editorMeta">Selecciona un archivo para editar</div>
+                    </div>
+                    <div class="editor-actions">
+                        <button id="reloadBtn" onclick="reloadFile()" disabled>↻ Recargar</button>
+                        <button id="saveBtn" class="primary" onclick="saveFile()" disabled>💾 Guardar</button>
+                    </div>
+                </div>
+                <div class="editor-content">
+                    <textarea id="editor" placeholder="Selecciona un archivo para editar..." disabled></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentAgent = null;
+        let currentFile = null;
+        let agentsData = [];
+        let refreshTimer = null;
+
+        // Initialize
+        async function init() {
+            loadAgents();
+            // Auto-refresh agents every 30 seconds
+            refreshTimer = setInterval(loadAgents, 30000);
+        }
+
+        async function loadAgents() {
+            try {
+                const response = await fetch('/api/agent-editor/agents');
+                if (!response.ok) throw new Error('Failed to load agents');
+                
+                agentsData = await response.json();
+                renderAgents();
+                updateStatus(`${agentsData.length} agentes detectados`);
+            } catch (error) {
+                console.error('Error loading agents:', error);
+                showToast('Error cargando agentes: ' + error.message, 'error');
+                updateStatus('Error al cargar agentes');
+            }
+        }
+
+        function renderAgents() {
+            const list = document.getElementById('agentList');
+            
+            if (agentsData.length === 0) {
+                list.innerHTML = '<div style="padding: 16px 12px; color: #666; font-size: 12px;">No hay agentes</div>';
+                return;
+            }
+
+            list.innerHTML = agentsData.map(agent => `
+                <div class="agent-item ${currentAgent?.id === agent.id ? 'active' : ''}" onclick="selectAgent('${agent.id}')">
+                    ${agent.name}
+                </div>
+            `).join('');
+        }
+
+        async function selectAgent(agentId) {
+            currentAgent = agentsData.find(a => a.id === agentId);
+            currentFile = null;
+            
+            renderAgents();
+            await loadFiles();
+            clearEditor();
+        }
+
+        async function loadFiles() {
+            try {
+                if (!currentAgent) return;
+                
+                const response = await fetch(`/api/agent-editor/${currentAgent.id}/files`);
+                if (!response.ok) throw new Error('Failed to load files');
+                
+                const files = await response.json();
+                renderFiles(files);
+            } catch (error) {
+                console.error('Error loading files:', error);
+                showToast('Error cargando archivos: ' + error.message, 'error');
+            }
+        }
+
+        function renderFiles(files) {
+            const list = document.getElementById('fileList');
+            
+            list.innerHTML = files.map(file => `
+                <div class="file-item ${currentFile?.name === file.name ? 'active' : ''}" onclick="selectFile('${file.name}')">
+                    <span class="${file.exists ? 'file-exists' : 'file-missing'}">
+                        ${file.exists ? '✓' : '✗'}
+                    </span>
+                    <span>${file.name}</span>
+                </div>
+            `).join('');
+        }
+
+        async function selectFile(fileName) {
+            if (!currentAgent) return;
+            
+            currentFile = { name: fileName };
+            
+            const fileList = document.getElementById('fileList');
+            const items = fileList.querySelectorAll('.file-item');
+            items.forEach(item => item.classList.remove('active'));
+            event.target.closest('.file-item').classList.add('active');
+            
+            await loadFileContent();
+        }
+
+        async function loadFileContent() {
+            try {
+                if (!currentAgent || !currentFile) return;
+                
+                const response = await fetch(
+                    `/api/agent-editor/${currentAgent.id}/file?name=${currentFile.name}`
+                );
+                if (!response.ok) throw new Error('Failed to load file');
+                
+                const data = await response.json();
+                currentFile.exists = data.exists;
+                currentFile.content = data.content;
+                
+                renderEditor();
+                updateEditorMeta();
+            } catch (error) {
+                console.error('Error loading file:', error);
+                showToast('Error cargando archivo: ' + error.message, 'error');
+            }
+        }
+
+        function renderEditor() {
+            const editor = document.getElementById('editor');
+            const saveBtn = document.getElementById('saveBtn');
+            const reloadBtn = document.getElementById('reloadBtn');
+            
+            if (!currentFile) {
+                clearEditor();
+                return;
+            }
+            
+            editor.value = currentFile.content || '';
+            editor.disabled = false;
+            saveBtn.disabled = false;
+            reloadBtn.disabled = false;
+            
+            document.getElementById('editorTitle').textContent = currentFile.name;
+        }
+
+        function clearEditor() {
+            const editor = document.getElementById('editor');
+            const saveBtn = document.getElementById('saveBtn');
+            const reloadBtn = document.getElementById('reloadBtn');
+            
+            editor.value = '';
+            editor.disabled = true;
+            saveBtn.disabled = true;
+            reloadBtn.disabled = true;
+            
+            document.getElementById('editorTitle').textContent = 'Agent Editor';
+            document.getElementById('editorMeta').textContent = 'Selecciona un archivo para editar';
+        }
+
+        async function saveFile() {
+            if (!currentAgent || !currentFile) return;
+            
+            // Confirm if SOUL.md
+            if (currentFile.name === 'SOUL.md') {
+                const confirmed = await showConfirm(
+                    '⚠️ Cambios al SOUL',
+                    'Los cambios al SOUL afectan directamente el comportamiento del agente. ¿Continuar?'
+                );
+                if (!confirmed) return;
+            }
+            
+            try {
+                const editor = document.getElementById('editor');
+                const content = editor.value;
+                
+                const response = await fetch(
+                    `/api/agent-editor/${currentAgent.id}/file?name=${currentFile.name}`,
+                    {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ content: content })
+                    }
+                );
+                
+                if (!response.ok) throw new Error('Failed to save file');
+                
+                const data = await response.json();
+                currentFile.exists = true;
+                showToast('✅ Archivo guardado', 'success');
+                updateEditorMeta();
+            } catch (error) {
+                console.error('Error saving file:', error);
+                showToast('Error guardando archivo: ' + error.message, 'error');
+            }
+        }
+
+        async function reloadFile() {
+            if (!currentAgent || !currentFile) return;
+            
+            try {
+                await loadFileContent();
+                showToast('✅ Archivo recargado desde disco', 'success');
+            } catch (error) {
+                console.error('Error reloading file:', error);
+                showToast('Error recargando archivo: ' + error.message, 'error');
+            }
+        }
+
+        function updateEditorMeta() {
+            const meta = document.getElementById('editorMeta');
+            
+            if (!currentFile) {
+                meta.textContent = 'Selecciona un archivo para editar';
+                return;
+            }
+            
+            if (currentFile.exists) {
+                meta.textContent = `Modificado: ${formatDate(currentFile.lastModified)}`;
+            } else {
+                meta.textContent = 'Archivo no existe (se creará al guardar)';
+            }
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'desconocido';
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = now - date;
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            
+            if (hours < 1) return 'hace unos minutos';
+            if (hours < 24) return `hace ${hours}h`;
+            if (days === 1) return 'ayer';
+            if (days < 30) return `hace ${days}d`;
+            
+            return date.toLocaleDateString('es-MX');
+        }
+
+        function updateStatus(text) {
+            document.getElementById('status').textContent = text;
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type === 'error' ? 'error' : type === 'warning' ? 'warning' : ''}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideIn 0.3s ease reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function showConfirm(title, message) {
+            return new Promise(resolve => {
+                const dialog = document.createElement('div');
+                dialog.className = 'confirm-dialog';
+                dialog.innerHTML = `
+                    <div class="confirm-dialog-content">
+                        <div class="confirm-dialog-title">${title}</div>
+                        <div class="confirm-dialog-message">${message}</div>
+                        <div class="confirm-dialog-actions">
+                            <button onclick="this.closest('.confirm-dialog').remove(); resolve(false);">Cancelar</button>
+                            <button class="primary" onclick="this.closest('.confirm-dialog').remove(); resolve(true);">Continuar</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(dialog);
+                
+                window.resolve = resolve;
+            });
+        }
+
+        // Initialize on load
+        window.addEventListener('load', init);
+
+        // Cleanup on unload
+        window.addEventListener('beforeunload', () => {
+            if (refreshTimer) clearInterval(refreshTimer);
+        });
+    </script>
+</body>
+</html>

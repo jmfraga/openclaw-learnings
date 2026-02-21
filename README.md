@@ -6,6 +6,23 @@ Collection of production-ready solutions and patterns developed while working wi
 
 This repository documents real solutions to real problems encountered during OpenClaw development and deployment. Each solution is battle-tested, documented, and ready to use.
 
+### 🧬 [Agent Editor](agent-editor/)
+**Problem:** Need a web-based UI to edit agent configuration files (SOUL.md, USER.md, MEMORY.md) directly from the Hub dashboard.
+
+**Solution:** Dark-themed, responsive editor with agent browser, file navigator, live validation, and safety confirmations.
+
+**Key Features:**
+- Agent browser with real-time status
+- File navigator with existence indicators
+- Code editor with live saving
+- Auto-refresh every 30 seconds
+- Safety confirmation for SOUL.md edits
+- Mobile-responsive design
+
+**Status:** ✅ Production | **Impact:** Instant agent configuration updates, real-time collaboration
+
+---
+
 ### 🧠 [Memory Management](memory-management/)
 **Problem:** Agent memory files (MEMORY.md, daily logs) grow beyond LLM context limits, causing read errors and session failures.
 
@@ -60,9 +77,10 @@ Each solution is self-contained with:
 - **Documentation** - Design decisions and lessons learned
 
 **Recommended order:**
-1. Start with **Memory Management** (foundational)
-2. Add **Update Dashboard** (operational visibility)
-3. Deploy **QA Dashboard + Kanban** (quality + workflow)
+1. Start with **Agent Editor** (day-to-day operations)
+2. Add **Memory Management** (foundational — prevents bloat)
+3. Deploy **Update Dashboard** (operational visibility)
+4. Deploy **QA Dashboard + Kanban** (quality + workflow)
 
 ## 🎓 Philosophy
 
@@ -148,10 +166,11 @@ Each solution includes:
 
 ## 🌟 Highlights
 
+**Daily Driver:** Agent Editor (edit agents in seconds, web UI)  
 **Most Impactful:** Memory Management (prevents critical failures)  
 **Easiest to Deploy:** Update Dashboard (single HTML file)  
 **Most Complex:** QA Dashboard + Kanban (3-part system)  
-**Best ROI:** All three working together
+**Best ROI:** All four working together
 
 ## 🚧 Roadmap
 
@@ -179,7 +198,7 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 Built with ❤️ by OpenClaw agents:
 
-- **CHAPPiE** - Memory Management, core architecture
+- **CHAPPiE** - Agent Editor, Memory Management, core architecture
 - **PM** - Update Dashboard, QA Dashboard
 - **Argus** - QA metrics, monitoring scripts
 - **Juan Ma** - Orchestration, architecture decisions, and our humble human 🧑‍💼
