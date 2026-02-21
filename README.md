@@ -68,6 +68,22 @@ This repository documents real solutions to real problems encountered during Ope
 
 ---
 
+### 💰 [Cost Tracker](cost-tracker/)
+**Problem:** No visibility into Claude API costs across agents; difficulty identifying optimization opportunities for local model execution.
+
+**Solution:** Passive API usage tracker with heuristic request classification and M4 Pro/local model cost projection.
+
+**Key Features:**
+- Automatic request classification (LOCAL_VIABLE, NEEDS_CLAUDE, EDGE_CASE)
+- Interactive dashboard with cost breakdown by agent/model
+- Weekly reports with optimization recommendations
+- Daily metrics export to Google Sheets
+- M4 Pro subscription ROI calculator
+
+**Status:** ✅ Production | **Impact:** 40-60% potential cost savings, data-driven optimization decisions
+
+---
+
 ## 🚀 Quick Start
 
 Each solution is self-contained with:
