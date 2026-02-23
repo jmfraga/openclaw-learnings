@@ -360,6 +360,118 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* PIN Modal */
+        #pin-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.92);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        #pin-modal.active { display: flex; }
+
+        .pin-modal-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #2d1b3d 100%);
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 380px;
+            width: 90%;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .pin-lock-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .pin-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .pin-subtitle {
+            color: #808080;
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+        }
+
+        .pin-input {
+            width: 100%;
+            padding: 16px;
+            font-size: 2rem;
+            letter-spacing: 12px;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: #fff;
+            outline: none;
+            margin-bottom: 20px;
+            transition: border-color 0.3s;
+        }
+        .pin-input:focus {
+            border-color: #00d4ff;
+        }
+        .pin-input.error {
+            border-color: #ff5252;
+            animation: shake 0.3s ease;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        .pin-error {
+            color: #ff5252;
+            font-size: 0.85rem;
+            min-height: 20px;
+            margin-bottom: 15px;
+        }
+
+        .logout-btn {
+            background: rgba(255, 82, 82, 0.15);
+            color: #ff5252;
+            border: 1px solid rgba(255, 82, 82, 0.4);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .logout-btn:hover {
+            background: rgba(255, 82, 82, 0.3);
+        }
+
+        .dry-run-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+            padding: 12px;
+            background: rgba(0, 212, 255, 0.08);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            color: #e0e0e0;
+            font-size: 0.95rem;
+            user-select: none;
+        }
+        .dry-run-label input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #00d4ff;
+        }
     </style>
 </head>
 <body>
@@ -467,10 +579,34 @@
             <a href="/">← Hub Principal</a>
             <a href="/qa/">QA Dashboard</a>
             <a href="/dashboard.html">System Dashboard</a>
+            &nbsp;|&nbsp;
+            <button class="logout-btn" onclick="logout()">🔒 Cerrar sesión</button>
         </div>
 
         <div class="timestamp" id="last-refresh">
             Última actualización: -
+        </div>
+    </div>
+
+    <!-- PIN Modal -->
+    <div id="pin-modal">
+        <div class="pin-modal-content">
+            <div class="pin-lock-icon">🔐</div>
+            <div class="pin-title">Update Dashboard</div>
+            <div class="pin-subtitle">Ingresa el PIN de acceso para continuar</div>
+            <input
+                type="password"
+                id="pin-input"
+                class="pin-input"
+                maxlength="4"
+                placeholder="••••"
+                inputmode="numeric"
+                autofocus
+                oninput="onPinInput(this)"
+                onkeydown="onPinKeydown(event)"
+            />
+            <div class="pin-error" id="pin-error"></div>
+            <button class="btn btn-primary" onclick="submitPin()" style="width: 100%;">🔓 Ingresar</button>
         </div>
     </div>
 
@@ -484,6 +620,10 @@
                 <p style="margin-top: 10px; font-size: 0.9rem; color: #808080;">
                     Asegúrate de haber ejecutado un backup reciente.
                 </p>
+                <label class="dry-run-label" style="margin-top: 15px;">
+                    <input type="checkbox" id="dry-run-checkbox">
+                    🧪 Dry Run (simular sin actualizar)
+                </label>
             </div>
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeModal('update-modal')">Cancelar</button>
@@ -496,23 +636,101 @@
         let currentStatus = null;
         let autoRefreshInterval = null;
 
-        // Initialize on page load
+        // ── PIN Authentication ────────────────────────────────────────────────
+        function getPin() {
+            return sessionStorage.getItem('updatePin') || '';
+        }
+
+        function pinHeaders() {
+            return { 'X-Update-Pin': getPin() };
+        }
+
+        function showPinModal() {
+            document.getElementById('pin-modal').classList.add('active');
+            setTimeout(() => document.getElementById('pin-input').focus(), 100);
+        }
+
+        function hidePinModal() {
+            document.getElementById('pin-modal').classList.remove('active');
+        }
+
+        function onPinInput(input) {
+            input.classList.remove('error');
+            document.getElementById('pin-error').textContent = '';
+            // Auto-submit when 4 digits entered
+            if (input.value.length === 4) submitPin();
+        }
+
+        function onPinKeydown(event) {
+            if (event.key === 'Enter') submitPin();
+        }
+
+        function submitPin() {
+            const input = document.getElementById('pin-input');
+            const pin = input.value.trim();
+
+            if (pin.length !== 4) {
+                input.classList.add('error');
+                document.getElementById('pin-error').textContent = 'El PIN debe tener 4 dígitos';
+                return;
+            }
+
+            // Store PIN and verify it works
+            sessionStorage.setItem('updatePin', pin);
+            hidePinModal();
+            initDashboard();
+        }
+
+        function logout() {
+            sessionStorage.removeItem('updatePin');
+            document.getElementById('pin-input').value = '';
+            document.getElementById('pin-error').textContent = '';
+            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+            showPinModal();
+        }
+
+        function handleAuthError() {
+            sessionStorage.removeItem('updatePin');
+            document.getElementById('pin-input').value = '';
+            document.getElementById('pin-error').textContent = 'PIN incorrecto. Intenta de nuevo.';
+            document.getElementById('pin-input').classList.add('error');
+            showPinModal();
+        }
+
+        async function authFetch(url, options = {}) {
+            const headers = { ...pinHeaders(), ...(options.headers || {}) };
+            const resp = await fetch(url, { ...options, headers });
+            if (resp.status === 401) {
+                handleAuthError();
+                throw new Error('PIN inválido');
+            }
+            return resp;
+        }
+
+        // ── Initialize on page load ───────────────────────────────────────────
         window.addEventListener('DOMContentLoaded', () => {
-            loadStatus();
-            runPreflightChecks();
-            
-            // Auto-refresh status every 30 seconds
-            autoRefreshInterval = setInterval(() => {
-                loadStatus();
-            }, 30000);
+            const savedPin = sessionStorage.getItem('updatePin');
+            if (!savedPin) {
+                showPinModal();
+            } else {
+                initDashboard();
+            }
         });
 
+        function initDashboard() {
+            loadStatus();
+            runPreflightChecks();
+            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+            autoRefreshInterval = setInterval(() => loadStatus(), 30000);
+        }
+
+        // ── Status & UI ───────────────────────────────────────────────────────
         async function loadStatus() {
             try {
+                // Status endpoint is public - no PIN needed
                 const response = await fetch('/api/update/status');
                 const data = await response.json();
                 currentStatus = data;
-                
                 updateUI(data);
                 updateTimestamp();
             } catch (error) {
@@ -521,11 +739,9 @@
         }
 
         function updateUI(data) {
-            // Versions
             document.getElementById('current-version').textContent = data.current_version || 'Unknown';
             document.getElementById('latest-version').textContent = data.latest_version || 'Unknown';
-            
-            // Update badge
+
             const badge = document.getElementById('update-badge');
             if (data.update_available) {
                 badge.className = 'version-badge badge-warning';
@@ -537,81 +753,73 @@
                 badge.className = 'version-badge badge-info';
                 badge.textContent = '🔄 Verificando...';
             }
-            
-            // Gateway status
+
             const gatewayEl = document.getElementById('gateway-status');
             if (data.gateway && data.gateway.running) {
                 gatewayEl.innerHTML = `<span style="color: #00ff88;">✅ Running</span> (PID: ${data.gateway.pid}, Uptime: ${data.gateway.uptime})`;
             } else {
                 gatewayEl.innerHTML = `<span style="color: #ff5252;">❌ Stopped</span>`;
             }
-            
-            // Last update
+
             const lastUpdateEl = document.getElementById('last-update');
             if (data.last_update) {
-                const date = new Date(data.last_update);
-                lastUpdateEl.textContent = date.toLocaleString('es-MX');
+                lastUpdateEl.textContent = new Date(data.last_update).toLocaleString('es-MX');
             } else {
                 lastUpdateEl.textContent = 'Desconocido';
             }
-            
-            // Last backup
+
             const lastBackupEl = document.getElementById('last-backup');
             if (data.last_backup && data.last_backup.exists) {
                 const date = new Date(data.last_backup.modified);
-                const ageColor = data.last_backup.age_hours < 24 ? '#00ff88' : '#ffc107';
-                lastBackupEl.innerHTML = `${date.toLocaleString('es-MX')} (<span style="color: ${ageColor};">${data.last_backup.age_hours}h ago</span>, ${data.last_backup.size_mb} MB)`;
+                const ageH = data.last_backup.age_hours;
+                const ageColor = ageH < 1 ? '#00ff88' : ageH < 24 ? '#ffc107' : '#ff5252';
+                const typeLabel = data.last_backup.type === 'tarball' ? '📦 tarball' : '📄 json';
+                lastBackupEl.innerHTML = `${date.toLocaleString('es-MX')} (<span style="color:${ageColor};">${ageH}h ago</span>, ${data.last_backup.size_mb} MB, ${typeLabel})`;
             } else {
                 lastBackupEl.innerHTML = '<span style="color: #ff5252;">No backup found</span>';
             }
         }
 
+        // ── Preflight ─────────────────────────────────────────────────────────
         async function runPreflightChecks() {
             const container = document.getElementById('preflight-checks');
             container.innerHTML = '<div class="log-empty"><span class="spinner"></span> Ejecutando checks...</div>';
-            
+
             try {
-                const response = await fetch('/api/update/preflight');
+                const response = await authFetch('/api/update/preflight');
                 const data = await response.json();
-                
+
                 let html = '';
                 for (const check of data.checks) {
-                    let icon = '✅';
-                    let iconColor = '#00ff88';
-                    
-                    if (check.status === 'warning') {
-                        icon = '⚠️';
-                        iconColor = '#ffc107';
-                    } else if (check.status === 'fail') {
-                        icon = '❌';
-                        iconColor = '#ff5252';
-                    }
-                    
+                    let icon = '✅', iconColor = '#00ff88';
+                    if (check.status === 'warning') { icon = '⚠️'; iconColor = '#ffc107'; }
+                    else if (check.status === 'fail') { icon = '❌'; iconColor = '#ff5252'; }
+
                     html += `
                         <div class="check-item">
                             <div class="check-icon" style="color: ${iconColor};">${icon}</div>
                             <div class="check-info">
                                 <div class="check-name">${check.name}</div>
                                 <div class="check-message">${check.message}</div>
-                                ${check.details ? `<div class="check-details">${check.details}</div>` : ''}
+                                ${check.details ? `<div class="check-details">${JSON.stringify(check.details)}</div>` : ''}
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                 }
-                
-                container.innerHTML = html;
+
+                container.innerHTML = html || '<div class="log-empty">No hay checks disponibles</div>';
             } catch (error) {
-                container.innerHTML = `<div class="log-empty" style="color: #ff5252;">Error: ${error.message}</div>`;
+                if (error.message !== 'PIN inválido') {
+                    container.innerHTML = `<div class="log-empty" style="color: #ff5252;">Error: ${error.message}</div>`;
+                }
             }
         }
 
+        // ── Actions ───────────────────────────────────────────────────────────
         async function checkForUpdates() {
             const btn = event.target.closest('button');
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner"></span> Verificando...';
-            
             await loadStatus();
-            
             btn.disabled = false;
             btn.innerHTML = '<span>🔄</span> Check for Updates';
         }
@@ -620,24 +828,29 @@
             const btn = event.target.closest('button');
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner"></span> Ejecutando backup...';
-            
+
             try {
-                const response = await fetch('/api/update/backup', { method: 'POST' });
+                const response = await authFetch('/api/update/backup', { method: 'POST' });
                 const data = await response.json();
-                
+
+                if (response.status === 409) {
+                    alert(`⚠️ ${data.error} (${data.operation})`);
+                    return;
+                }
+
                 if (data.success) {
-                    alert('✅ Backup completado exitosamente!');
+                    alert(`✅ Backup completado!\n📦 Tipo: ${data.type || 'tarball'}\n📏 Tamaño: ${data.size_mb} MB`);
                     loadStatus();
                 } else {
-                    alert(`❌ Backup falló: ${data.message}`);
+                    alert(`❌ Backup falló: ${data.error || data.message}`);
                 }
-                
+
                 if (data.log_file) {
                     document.getElementById('log-operation').value = 'backup';
                     loadLogs();
                 }
             } catch (error) {
-                alert(`❌ Error: ${error.message}`);
+                if (error.message !== 'PIN inválido') alert(`❌ Error: ${error.message}`);
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<span>💾</span> Run Backup';
@@ -645,37 +858,48 @@
         }
 
         function confirmUpdate() {
+            document.getElementById('dry-run-checkbox').checked = false;
             document.getElementById('update-modal').classList.add('active');
         }
 
         async function runUpdate() {
+            const isDryRun = document.getElementById('dry-run-checkbox').checked;
             closeModal('update-modal');
-            
+
             const btn = document.querySelector('button[onclick*="confirmUpdate"]');
             btn.disabled = true;
-            btn.innerHTML = '<span class="spinner"></span> Actualizando...';
-            
+            btn.innerHTML = isDryRun
+                ? '<span class="spinner"></span> Simulando...'
+                : '<span class="spinner"></span> Actualizando...';
+
             try {
-                const response = await fetch('/api/update/run', { 
+                const response = await authFetch('/api/update/run', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ dry_run: false })
+                    body: JSON.stringify({ dry_run: isDryRun })
                 });
                 const data = await response.json();
-                
-                if (data.success) {
+
+                if (response.status === 409) {
+                    alert(`⚠️ ${data.error} (operación: ${data.operation})`);
+                    return;
+                }
+
+                if (data.dry_run) {
+                    alert(`🧪 Dry-run completado:\n• Versión actual: ${data.current}\n• Se actualizaría a: ${data.would_update_to}`);
+                } else if (data.success) {
                     alert(`✅ Actualización completada!\nNueva versión: ${data.new_version}`);
                     loadStatus();
                 } else {
                     alert(`❌ Actualización falló: ${data.message}\n\nRevisa los logs para más detalles.`);
                 }
-                
+
                 if (data.log_file) {
                     document.getElementById('log-operation').value = 'update';
                     loadLogs();
                 }
             } catch (error) {
-                alert(`❌ Error: ${error.message}`);
+                if (error.message !== 'PIN inválido') alert(`❌ Error: ${error.message}`);
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<span>⬆️</span> Update OpenClaw';
@@ -686,23 +910,28 @@
             const btn = event.target.closest('button');
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner"></span> Verificando...';
-            
+
             try {
-                const response = await fetch('/api/update/verify', { method: 'POST' });
+                const response = await authFetch('/api/update/verify', { method: 'POST' });
                 const data = await response.json();
-                
+
+                if (response.status === 409) {
+                    alert(`⚠️ ${data.error} (${data.operation})`);
+                    return;
+                }
+
                 if (data.success) {
                     alert('✅ Verificación exitosa! Todos los checks pasaron.');
                 } else {
                     alert(`⚠️ Verificación encontró problemas:\n\n${data.output}\n\nRevisa los logs para más detalles.`);
                 }
-                
+
                 if (data.log_file) {
                     document.getElementById('log-operation').value = 'verify';
                     loadLogs();
                 }
             } catch (error) {
-                alert(`❌ Error: ${error.message}`);
+                if (error.message !== 'PIN inválido') alert(`❌ Error: ${error.message}`);
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<span>✅</span> Post-Update Check';
@@ -712,18 +941,18 @@
         async function loadLogs() {
             const operation = document.getElementById('log-operation').value;
             const container = document.getElementById('log-content');
-            
+
             if (!operation) {
                 container.innerHTML = '<div class="log-empty">Selecciona una operación para ver logs</div>';
                 return;
             }
-            
+
             container.innerHTML = '<div class="log-empty"><span class="spinner"></span> Cargando logs...</div>';
-            
+
             try {
-                const response = await fetch(`/api/update/logs/${operation}`);
+                const response = await authFetch(`/api/update/logs/${operation}`);
                 const data = await response.json();
-                
+
                 if (data.success && data.content) {
                     container.innerHTML = `<pre>${escapeHtml(data.content)}</pre>`;
                     container.scrollTop = container.scrollHeight;
@@ -731,41 +960,44 @@
                     container.innerHTML = `<div class="log-empty">${data.message || 'No logs disponibles'}</div>`;
                 }
             } catch (error) {
-                container.innerHTML = `<div class="log-empty" style="color: #ff5252;">Error: ${error.message}</div>`;
+                if (error.message !== 'PIN inválido') {
+                    container.innerHTML = `<div class="log-empty" style="color: #ff5252;">Error: ${error.message}</div>`;
+                }
             }
         }
 
         function showRollbackModal() {
-            if (!confirm('⚠️ ADVERTENCIA: Rollback restaurará la versión anterior de OpenClaw.\n\n¿Continuar?')) {
-                return;
-            }
-            
+            if (!confirm('⚠️ ADVERTENCIA: Rollback restaurará la versión anterior de OpenClaw.\n\n¿Continuar?')) return;
             executeRollback();
         }
 
         async function executeRollback() {
+            const statusDiv = document.getElementById('rollback-status');
+            if (statusDiv) statusDiv.textContent = '⏳ Ejecutando rollback...';
+
             try {
-                // Mostrar progreso
-                const statusDiv = document.getElementById('rollback-status');
-                if (statusDiv) statusDiv.textContent = '⏳ Ejecutando rollback...';
-                
-                const response = await fetch('/api/update/rescue', {
+                const response = await authFetch('/api/update/rescue', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
-                
                 const result = await response.json();
-                
+
+                if (response.status === 409) {
+                    if (statusDiv) statusDiv.textContent = '⚠️ Operación en curso';
+                    alert(`⚠️ ${result.error} (${result.operation})`);
+                    return;
+                }
+
                 if (result.success) {
                     if (statusDiv) statusDiv.textContent = '✅ Rollback completado';
                     alert('✅ Rollback exitoso.\n\nGateway reiniciado con versión anterior.');
-                    location.reload(); // Refrescar dashboard
+                    location.reload();
                 } else {
                     if (statusDiv) statusDiv.textContent = '❌ Rollback falló';
-                    alert('❌ Rollback falló:\n\n' + (result.message || 'Error desconocido'));
+                    alert('❌ Rollback falló:\n\n' + (result.message || result.error || 'Error desconocido'));
                 }
             } catch (error) {
-                alert('❌ Error ejecutando rollback:\n\n' + error.message);
+                if (error.message !== 'PIN inválido') alert('❌ Error ejecutando rollback:\n\n' + error.message);
             }
         }
 
@@ -775,18 +1007,12 @@
 
         function updateTimestamp() {
             const now = new Date();
-            document.getElementById('last-refresh').textContent = 
+            document.getElementById('last-refresh').textContent =
                 `Última actualización: ${now.toLocaleString('es-MX')}`;
         }
 
         function escapeHtml(text) {
-            const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            };
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
             return text.replace(/[&<>"']/g, m => map[m]);
         }
     </script>
