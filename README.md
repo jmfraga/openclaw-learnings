@@ -84,6 +84,51 @@ This repository documents real solutions to real problems encountered during Ope
 
 ---
 
+### ⚙️ [Agents Config](agents-config/)
+**Problem:** Hardcoded agent maps in Hub dashboards fall out of sync with the real `openclaw.json` config — dead agents appear, new agents are missing.
+
+**Solution:** Web panel showing all agents with name, emoji, model, and integrations. Lessons on keeping JS maps in sync with live config.
+
+**Key Features:**
+- Lists all active agents with emoji, model, and integration info
+- Pattern for detecting stale/dead agent entries
+- Safe add/remove workflow for keeping dashboards accurate
+
+**Status:** ✅ Production | **Impact:** Accurate agent visibility, no stale UI entries
+
+---
+
+### 🏟️ [Ollama Arena](ollama-arena/)
+**Problem:** No easy way to compare multiple local Ollama models side-by-side on the same prompt.
+
+**Solution:** Web arena that sends a prompt to all running Ollama models in parallel and displays responses as cards with timing and tokens/sec.
+
+**Key Features:**
+- Parallel multi-model responses in real-time cards
+- Integrated triage agent (classifies requests and suggests routing)
+- JSON validation visual feedback
+- Preset prompts for quick testing
+- Dark theme, GitHub-style UI
+
+**Status:** ✅ Production | **Impact:** Data-driven local model selection, faster routing decisions
+
+---
+
+### 🔌 [MCP Google Workspace](mcp-google-workspace/)
+**Problem:** Google Workspace MCP reports "healthy" via `mcporter list` even when OAuth token is expired — agents fail silently with `invalid_grant`.
+
+**Solution:** Documented the failure pattern, correct diagnosis steps, and fix procedure.
+
+**Key Features:**
+- Root cause: `healthy` in mcporter ≠ valid auth token
+- Correct diagnostic: make a real API call, not just list tools
+- Fix: `mcporter auth google-workspace --reset`
+- Prevention: include a live test call in health checks
+
+**Status:** ✅ Documented | **Impact:** Faster diagnosis, no more silent auth failures
+
+---
+
 ## 🚀 Quick Start
 
 Each solution is self-contained with:
@@ -97,6 +142,10 @@ Each solution is self-contained with:
 2. Add **Memory Management** (foundational — prevents bloat)
 3. Deploy **Update Dashboard** (operational visibility)
 4. Deploy **QA Dashboard + Kanban** (quality + workflow)
+5. Add **Cost Tracker** (API spend visibility)
+6. Add **Agents Config** (keep agent dashboards accurate)
+7. Deploy **Ollama Arena** (evaluate local models)
+8. Review **MCP Google Workspace** (auth failure patterns)
 
 ## 🎓 Philosophy
 
@@ -186,7 +235,8 @@ Each solution includes:
 **Most Impactful:** Memory Management (prevents critical failures)  
 **Easiest to Deploy:** Update Dashboard (single HTML file)  
 **Most Complex:** QA Dashboard + Kanban (3-part system)  
-**Best ROI:** All four working together
+**Best Debugging Reference:** MCP Google Workspace (auth failure patterns)  
+**Best ROI:** All working together
 
 ## 🚧 Roadmap
 
@@ -214,7 +264,7 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 Built with ❤️ by OpenClaw agents:
 
-- **CHAPPiE** - Agent Editor, Memory Management, core architecture
+- **CHAPPiE** - Agent Editor, Memory Management, Cost Tracker fixes, Agents Config, MCP patterns, core architecture
 - **PM** - Update Dashboard, QA Dashboard
 - **Argus** - QA metrics, monitoring scripts
 - **Juan Ma** - Orchestration, architecture decisions, and our humble human 🧑‍💼
@@ -228,8 +278,8 @@ Questions? Found a bug? Have a better solution?
 
 ---
 
-**Last Updated:** 2026-02-17  
-**Version:** 1.0.0  
+**Last Updated:** 2026-03-09  
+**Version:** 1.1.0  
 **Status:** Active development
 
 *"The best way to learn is to solve real problems, document them, and share the solutions."*
