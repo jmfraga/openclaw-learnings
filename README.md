@@ -69,18 +69,17 @@ This repository documents real solutions to real problems encountered during Ope
 ---
 
 ### 💰 [Cost Tracker](cost-tracker/)
-**Problem:** No visibility into Claude API costs across agents; difficulty identifying optimization opportunities for local model execution.
+**Problem:** No visibility into Claude API costs across agents; difficulty identifying optimization opportunities.
 
-**Solution:** Passive API usage tracker with heuristic request classification and M4 Pro/local model cost projection.
+**Solution:** Passive API usage tracker with heuristic request classification and cost breakdown by agent/model.
 
 **Key Features:**
 - Automatic request classification (LOCAL_VIABLE, NEEDS_CLAUDE, EDGE_CASE)
 - Interactive dashboard with cost breakdown by agent/model
 - Weekly reports with optimization recommendations
-- Daily metrics export to Google Sheets
-- M4 Pro subscription ROI calculator
+- Daily metrics export
 
-**Status:** ✅ Production | **Impact:** 40-60% potential cost savings, data-driven optimization decisions
+**Status:** ✅ Production | **Impact:** Data-driven cost optimization
 
 ---
 
@@ -95,22 +94,6 @@ This repository documents real solutions to real problems encountered during Ope
 - Safe add/remove workflow for keeping dashboards accurate
 
 **Status:** ✅ Production | **Impact:** Accurate agent visibility, no stale UI entries
-
----
-
-### 🏟️ [Ollama Arena](ollama-arena/)
-**Problem:** No easy way to compare multiple local Ollama models side-by-side on the same prompt.
-
-**Solution:** Web arena that sends a prompt to all running Ollama models in parallel and displays responses as cards with timing and tokens/sec.
-
-**Key Features:**
-- Parallel multi-model responses in real-time cards
-- Integrated triage agent (classifies requests and suggests routing)
-- JSON validation visual feedback
-- Preset prompts for quick testing
-- Dark theme, GitHub-style UI
-
-**Status:** ✅ Production | **Impact:** Data-driven local model selection, faster routing decisions
 
 ---
 
@@ -129,6 +112,86 @@ This repository documents real solutions to real problems encountered during Ope
 
 ---
 
+### 💬 [Hub Chat](hub-chat/)
+**Problem:** Internal multi-agent chat hub needed clean agent name parsing and real-time messaging.
+
+**Solution:** Chat UI wired to agent sessions with IDENTITY.md parser that strips markdown formatting (bold markers, emoji normalization).
+
+**Key Features:**
+- Real-time messaging via SSE
+- Agent selector with identity parsing
+- Bug fix: `**` stripped from names before display
+- Dark theme, mobile-friendly
+
+**Status:** ✅ Production | **Impact:** Clean agent names, stable chat sessions
+
+---
+
+### 🎓 [SimCert — Certificate Generator](https://github.com/jmfraga/simcert) *(separate repo)*
+**Problem:** SimAcademy and Asesores en Emergencias needed a way to issue verifiable PDF certificates for courses — without Moodle or paid SaaS.
+
+**Solution:** Standalone Node.js microservice with PDF generation, public verification via QR, and a full admin web panel.
+
+**Key Features:**
+- Rasterization-based PDF engine: overlays participant data pixel-perfect on any PDF template
+- Public verification at `https://verify.medexpert.mx/verify/{hash}` (Cloudflare Tunnel → Pi)
+- Admin panel at `https://cert.medexpert.mx` with multi-user auth (admin/emisor roles)
+- Batch generation from CSV or paste from Google Sheets
+- Certificate preview before batch emit
+- Email delivery via SMTP
+- SQLite — zero-config, ≤50 certs/month target
+
+**Tech Stack:** Node.js + Express + better-sqlite3 + pdf-lib + Pillow (Python rasterizer) + express-session
+
+**Deployment:** Raspberry Pi (ARM64) behind Cloudflare Tunnel. No additional infrastructure cost.
+
+**Status:** ✅ Production (2026-03-18) | **Impact:** Full cert lifecycle, verifiable by anyone with the URL
+
+---
+
+## 🏗️ Infrastructure (as of 2026-03-18)
+
+### Hardware
+| Machine | Tailscale IP | Role |
+|---|---|---|
+| Raspberry Pi (main) | `100.71.128.102` | Hub, cert-server, contact manager, all agents |
+| Mac Mini M1 | `100.107.30.22` | Cloudflare Tunnel, Python API (api.medexpert.mx) |
+
+### Agents
+| Agent | Model | Role |
+|---|---|---|
+| PM | Haiku | Coordinator, Telegram interface |
+| CHAPPiE | Sonnet | Developer, QA, cert-server, Hub |
+| Phoenix | Sonnet | Branding, landing pages |
+| Iris Assistant | Haiku | WhatsApp assistant |
+| Iris Med | Sonnet | Medical assistant |
+| Atlas | Haiku | Research, web search |
+| Argus | Haiku | Log monitoring, Kanban QA |
+| Quill | Sonnet | Document generation |
+| Echo | Haiku | Memory coordination |
+
+### Services
+| Service | Port | systemd unit |
+|---|---|---|
+| Hub | 8080 | `oc-hub.service` |
+| Contact Manager | 3335 | `contacts-manager.service` |
+| SimCert | 4000 | `simcert.service` |
+
+### Domains (medexpert.mx)
+| Subdomain | Target | Notes |
+|---|---|---|
+| `medexpert.mx` | GitHub Pages | Main site — do not touch |
+| `api.medexpert.mx` | Mac Mini :8081 | Python API |
+| `verify.medexpert.mx` | Pi :4000 | Public cert verification |
+| `cert.medexpert.mx` | Pi :4000 | SimCert admin panel (auth required) |
+
+> All tunnels via Cloudflare (`438e66a3-a434-468b-8cb1-7a0565c781d9`), config at `~/.cloudflared/config.yml` on Mac Mini.
+
+### Local AI (Ollama)
+> **Status: Disabled (2026-02-19).** Models removed to free disk. Binary installed at `/usr/local/bin/ollama`, service disabled. The Ollama Arena solution in this repo is archived for reference.
+
+---
+
 ## 🚀 Quick Start
 
 Each solution is self-contained with:
@@ -144,8 +207,8 @@ Each solution is self-contained with:
 4. Deploy **QA Dashboard + Kanban** (quality + workflow)
 5. Add **Cost Tracker** (API spend visibility)
 6. Add **Agents Config** (keep agent dashboards accurate)
-7. Deploy **Ollama Arena** (evaluate local models)
-8. Review **MCP Google Workspace** (auth failure patterns)
+7. Review **MCP Google Workspace** (auth failure patterns)
+8. Deploy **SimCert** for certificate issuance
 
 ## 🎓 Philosophy
 
@@ -183,6 +246,7 @@ These solutions work together:
 - Memory Management prevents bloat that QA Dashboard would catch
 - Update Dashboard shows deployment status affecting all systems
 - QA Kanban links quality issues to Memory incidents
+- SimCert integrates with the Hub via API-first design
 
 ## 📊 Metrics & Impact
 
@@ -201,11 +265,16 @@ These solutions work together:
 - Resolution time: -40%
 - Task visibility: Real-time
 
+**SimCert:**
+- Certificate issuance: manual → automated batch
+- Verification: public URL, no login required
+- Infrastructure cost: $0 (runs on existing Pi)
+
 ## 🛠️ Tech Stack
 
-- **Languages:** Bash, Python, JavaScript
-- **Infrastructure:** Git hooks, Cron, HTTP servers
-- **Deployment:** Local-first, no cloud dependencies
+- **Languages:** Bash, Python, JavaScript, Node.js
+- **Infrastructure:** Git hooks, Cron, systemd user services, Cloudflare Tunnel
+- **Deployment:** Local-first (Raspberry Pi), no cloud dependencies
 - **Integration:** OpenClaw Gateway API
 
 ## 🔐 Security & Privacy
@@ -234,17 +303,18 @@ Each solution includes:
 **Daily Driver:** Agent Editor (edit agents in seconds, web UI)  
 **Most Impactful:** Memory Management (prevents critical failures)  
 **Easiest to Deploy:** Update Dashboard (single HTML file)  
-**Most Complex:** QA Dashboard + Kanban (3-part system)  
+**Most Complex:** SimCert (PDF engine + auth + Cloudflare tunnel)  
 **Best Debugging Reference:** MCP Google Workspace (auth failure patterns)  
 **Best ROI:** All working together
 
 ## 🚧 Roadmap
 
 Potential future solutions:
-- [ ] Incident response automation
+- [ ] Firma digital Nivel 2 en certificados (X.509, visible en Adobe)
+- [ ] Webhook Moodle → SimCert para emisión automática
+- [ ] Activity Dashboard (metrics de agentes)
 - [ ] Cross-agent communication patterns
 - [ ] Skill dependency management
-- [ ] Multi-workspace deployment tools
 - [ ] Agent performance profiling
 
 ## 🤝 Contributing
@@ -264,10 +334,10 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 Built with ❤️ by OpenClaw agents:
 
-- **CHAPPiE** - Agent Editor, Memory Management, Cost Tracker fixes, Agents Config, MCP patterns, core architecture
-- **PM** - Update Dashboard, QA Dashboard
+- **CHAPPiE** - Agent Editor, Memory Management, Cost Tracker, Agents Config, Hub Chat fixes, SimCert (full stack), MCP patterns, core architecture
+- **PM** - Update Dashboard, QA Dashboard, orchestration
 - **Argus** - QA metrics, monitoring scripts
-- **Juan Ma** - Orchestration, architecture decisions, and our humble human 🧑‍💼
+- **Juan Ma** - Architecture decisions, product direction, and our humble human 🧑‍💼
 
 ## 📬 Contact
 
@@ -278,8 +348,8 @@ Questions? Found a bug? Have a better solution?
 
 ---
 
-**Last Updated:** 2026-03-09  
-**Version:** 1.1.0  
+**Last Updated:** 2026-03-18  
+**Version:** 1.2.0  
 **Status:** Active development
 
 *"The best way to learn is to solve real problems, document them, and share the solutions."*
