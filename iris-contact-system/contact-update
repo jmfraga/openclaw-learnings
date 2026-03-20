@@ -1,0 +1,173 @@
+#!/bin/bash
+# contact-update - Helper script for Iris to manage contacts.jsonl
+# Author: Phoenix
+# Date: 2026-02-07
+# Version: 2.0 - Fixed JSON array/object handling
+
+CONTACTS_FILE="/home/jmfraga/.openclaw/workspace/shared_with_phoenix/docs/contacts.jsonl"
+BACKUP_DIR="/home/jmfraga/.openclaw/workspace/shared_with_phoenix/docs/backups"
+
+# Ensure backup directory exists
+mkdir -p "$BACKUP_DIR"
+
+# Function to backup contacts.jsonl
+backup_contacts() {
+    local timestamp=$(date +%Y%m%d_%H%M%S)
+    cp "$CONTACTS_FILE" "$BACKUP_DIR/contacts_${timestamp}.jsonl"
+    # Keep only last 10 backups
+    ls -t "$BACKUP_DIR"/contacts_*.jsonl | tail -n +11 | xargs -r rm
+}
+
+# Function to validate JSON
+validate_json() {
+    local file="$1"
+    while IFS= read -r line; do
+        if ! echo "$line" | jq empty 2>/dev/null; then
+            echo "ERROR: Invalid JSON format in line: $line"
+            return 1
+        fi
+    done < "$file"
+    return 0
+}
+
+# Function: add contact
+add_contact() {
+    local numero="$1"
+    local nombre="$2"
+    local fecha_nac="${3:-null}"
+    local apodo="${4:-}"
+    
+    if [ -z "$numero" ] || [ -z "$nombre" ]; then
+        echo "Usage: contact-update add <numero> <nombre> [fecha_nac] [apodo]"
+        return 1
+    fi
+    
+    # Check if contact exists
+    if grep -q "\"numero\":\"$numero\"" "$CONTACTS_FILE" 2>/dev/null; then
+        echo "ERROR: Contact with number $numero already exists"
+        return 1
+    fi
+    
+    # Backup before adding
+    backup_contacts
+    
+    # Create new contact entry (compact JSON)
+    local ultimo_contacto=$(date +%Y-%m-%d)
+    local new_contact=$(jq -nc \
+        --arg num "$numero" \
+        --arg nom "$nombre" \
+        --arg fn "$fecha_nac" \
+        --arg ap "$apodo" \
+        --arg uc "$ultimo_contacto" \
+        '{
+            numero: $num,
+            nombre: $nom,
+            apodo: (if $ap == "" then null else $ap end),
+            roles: ["cliente_potencial"],
+            rol_primario: "cliente_potencial",
+            organizacion: null,
+            nivel_acceso: "C",
+            contexto_preferido: "medico",
+            fecha_nacimiento: (if $fn == "null" then null else $fn end),
+            ultimo_contacto: $uc,
+            notas: ""
+        }')
+    
+    # Append to file
+    echo "$new_contact" >> "$CONTACTS_FILE"
+    
+    echo "✅ Contact added: $nombre ($numero)"
+}
+
+# Function: edit contact field
+edit_contact() {
+    local numero="$1"
+    local field="$2"
+    local value="$3"
+    
+    if [ -z "$numero" ] || [ -z "$field" ] || [ -z "$value" ]; then
+        echo "Usage: contact-update edit <numero> <field> <value>"
+        return 1
+    fi
+    
+    # Backup before editing
+    backup_contacts
+    
+    # Detect if value is JSON (array or object)
+    local is_json=false
+    if echo "$value" | jq empty 2>/dev/null; then
+        is_json=true
+    fi
+    
+    # Update the field using compact JSON
+    local temp_file=$(mktemp)
+    if [ "$is_json" = true ]; then
+        # Use --argjson for JSON values (arrays, objects)
+        while IFS= read -r line; do
+            echo "$line" | jq -c --arg num "$numero" --arg fld "$field" --argjson val "$value" \
+                'if .numero == $num then .[$fld] = $val else . end'
+        done < "$CONTACTS_FILE" > "$temp_file"
+    else
+        # Use --arg for string values
+        while IFS= read -r line; do
+            echo "$line" | jq -c --arg num "$numero" --arg fld "$field" --arg val "$value" \
+                'if .numero == $num then .[$fld] = $val else . end'
+        done < "$CONTACTS_FILE" > "$temp_file"
+    fi
+    
+    if validate_json "$temp_file"; then
+        mv "$temp_file" "$CONTACTS_FILE"
+        echo "✅ Contact updated: $numero - $field = $value"
+    else
+        rm "$temp_file"
+        echo "ERROR: Update failed, backup preserved"
+        return 1
+    fi
+}
+
+# Function: get contact
+get_contact() {
+    local numero="$1"
+    
+    if [ -z "$numero" ]; then
+        echo "Usage: contact-update get <numero>"
+        return 1
+    fi
+    
+    grep "\"numero\":\"$numero\"" "$CONTACTS_FILE" | jq .
+}
+
+# Function: list all contacts
+list_contacts() {
+    jq -r '.nombre + " (" + .numero + ")"' "$CONTACTS_FILE" | sort
+}
+
+# Main command router
+case "$1" in
+    add)
+        shift
+        add_contact "$@"
+        ;;
+    edit)
+        shift
+        edit_contact "$@"
+        ;;
+    get)
+        shift
+        get_contact "$@"
+        ;;
+    list)
+        list_contacts
+        ;;
+    *)
+        echo "Usage: contact-update {add|edit|get|list}"
+        echo ""
+        echo "Commands:"
+        echo "  add <numero> <nombre> [fecha_nac] [apodo]  - Add new contact"
+        echo "  edit <numero> <field> <value>              - Edit contact field"
+        echo "    For arrays/objects, use JSON format: edit +521... roles '[\"amiga\",\"colaboradora\"]'"
+        echo "  get <numero>                               - Get contact details"
+        echo "  list                                       - List all contacts"
+        exit 1
+        ;;
+esac

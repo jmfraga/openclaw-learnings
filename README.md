@@ -127,6 +127,24 @@ This repository documents real solutions to real problems encountered during Ope
 
 ---
 
+### 📇 [Iris Contact System](iris-contact-system/)
+**Problem:** Agents need a structured, extensible system to manage and query contact information with rich metadata (roles, access levels, medical history, organizational context).
+
+**Solution:** JSONL-based contact database with a robust bash management tool for add/edit/get/list operations, safe backups, and JSON validation.
+
+**Key Features:**
+- JSONL format (compatible with jq, Python, Node.js, databases)
+- Rich contact schema: roles, access levels, context preferences, metadata
+- Bash management tool (`contact-update`) with safe edits and auto-backups
+- Medical context support (allergies, diagnoses, medications in notes)
+- Multi-agent integration ready (shared file, reusable patterns)
+
+**Status:** ✅ Production | **Impact:** Structured contact management, supports medical context, easy agent integration
+
+---
+
+---
+
 ### 🎓 [SimCert — Certificate Generator](https://github.com/jmfraga/simcert) *(separate repo)*
 **Problem:** SimAcademy and Asesores en Emergencias needed a way to issue verifiable PDF certificates for courses — without Moodle or paid SaaS.
 
