@@ -2,7 +2,7 @@
 
 ## Propósito
 
-El sistema de contactos de Iris es una solución de gestión de contactos para agentes OpenClaw que integra información personal, profesional y contextual sobre individuos, colaboradores, pacientes y organizaciones. Diseñado originalmente para Iris Assistant, permite a los agentes acceder, actualizar y mantener un registro estructurado de contactos con metadatos relevantes para la comunicación contextualizada.
+El sistema de contactos de Iris es una solución de gestión de contactos para agentes OpenClaw que integra información personal, profesional y contextual sobre individuos, colaboradores y organizaciones. Diseñado originalmente para Iris Assistant, permite a los agentes acceder, actualizar y mantener un registro estructurado de contactos con metadatos relevantes para la comunicación contextualizada.
 
 ## Características
 
@@ -17,39 +17,27 @@ El sistema de contactos de Iris es una solución de gestión de contactos para a
 ```
 iris-contact-system/
 ├── README.md                    # Este archivo (documentación)
-├── contacts.jsonl               # Base de datos de contactos (JSONL)
+├── contacts.jsonl               # Base de datos de contactos (JSONL) — NO incluido en repo
 └── contact-update               # Script bash para gestión de contactos
 ```
 
-### contacts.jsonl
-
-Base de datos en formato JSONL donde cada línea es un objeto JSON que representa un contacto. Almacenado en:
-- **Workspace de Iris**: `/home/jmfraga/.openclaw/workspace-iris-assistant/contacts.jsonl`
-
-**Ubicación compartida** (para integración con otros agentes):
-- `/home/jmfraga/.openclaw/workspace/shared_with_phoenix/docs/contacts.jsonl`
-
-### contact-update
-
-Script bash que proporciona interfaz segura para gestionar contactos sin necesidad de editar JSON directamente.
-
-**Ubicación**: `/home/jmfraga/.openclaw/workspace-iris-assistant/scripts/contact-update`
+> ⚠️ El archivo `contacts.jsonl` contiene información personal y NO debe subirse al repositorio. Está incluido en `.gitignore`.
 
 ## Esquema de Contacto
 
 ```json
 {
-  "numero": "+5214422581157",
-  "nombre": "Dr. Juan Manuel Fraga Sastrias",
+  "numero": "+521XXXXXXXXXX",
+  "nombre": "Nombre Completo del Contacto",
   "apodo": null,
-  "roles": ["familia"],
-  "rol_primario": "familia",
-  "organizacion": null,
-  "nivel_acceso": "A",
-  "contexto_preferido": "personal",
-  "fecha_nacimiento": "1976-04-25",
-  "ultimo_contacto": "2026-02-05",
-  "notas": "Mi humano"
+  "roles": ["colaborador"],
+  "rol_primario": "colaborador",
+  "organizacion": "nombre-organizacion",
+  "nivel_acceso": "B",
+  "contexto_preferido": "profesional",
+  "fecha_nacimiento": "1980-01-15",
+  "ultimo_contacto": "2026-01-01",
+  "notas": "Notas internas sobre el contacto"
 }
 ```
 
@@ -57,12 +45,12 @@ Script bash que proporciona interfaz segura para gestionar contactos sin necesid
 
 | Campo | Tipo | Obligatorio | Descripción |
 |-------|------|-------------|-------------|
-| `numero` | string | ✅ | Número telefónico (formato E.164, ej. +5214422581157) |
+| `numero` | string | ✅ | Número telefónico (formato E.164, ej. +521XXXXXXXXXX) |
 | `nombre` | string | ✅ | Nombre completo del contacto |
 | `apodo` | string\|null | ❌ | Apodo o sobrenombre |
 | `roles` | array[string] | ✅ | Lista de roles (familia, amigo, colaborador, paciente, coordinadora, etc.) |
 | `rol_primario` | string | ✅ | Rol principal del contacto |
-| `organizacion` | string\|null | ❌ | Organización asociada (SimAcademy, Cancer Center Tec 100, etc.) |
+| `organizacion` | string\|null | ❌ | Organización asociada |
 | `nivel_acceso` | string | ✅ | Nivel de privacidad/acceso (A=alto, B=medio, C=bajo/cliente) |
 | `contexto_preferido` | string | ✅ | Contexto óptimo para contacto (personal, organizacional, médico, profesional) |
 | `fecha_nacimiento` | date\|null | ❌ | Fecha de nacimiento en formato YYYY-MM-DD |
@@ -71,24 +59,24 @@ Script bash que proporciona interfaz segura para gestionar contactos sin necesid
 
 ## Ejemplos de Contactos
 
-### Familia
+### Familiar / Contacto Personal
 ```json
-{"numero":"+5214422742162","nombre":"María Isabel Segura Esquivel","apodo":"Maribel","roles":["familia"],"rol_primario":"familia","organizacion":null,"nivel_acceso":"A","contexto_preferido":"personal","fecha_nacimiento":"1976-02-23","ultimo_contacto":"2026-02-07","notas":"Novia de JuanMa"}
+{"numero":"+521XXXXXXXXXX","nombre":"Nombre Apellido","apodo":"Apodo","roles":["familia"],"rol_primario":"familia","organizacion":null,"nivel_acceso":"A","contexto_preferido":"personal","fecha_nacimiento":"1980-06-15","ultimo_contacto":"2026-01-01","notas":"Familiar cercano"}
 ```
 
 ### Colaborador Profesional
 ```json
-{"numero":"+5215531273760","nombre":"Hugo Olvera","roles":["colaborador","amigo"],"rol_primario":"colaborador","organizacion":"simacademy","nivel_acceso":"C","contexto_preferido":"organizacional","fecha_nacimiento":null,"ultimo_contacto":"2026-02-06","notas":"Profesor SimAcademy"}
+{"numero":"+521XXXXXXXXXX","nombre":"Dr. Ejemplo García","roles":["colaborador"],"rol_primario":"colaborador","organizacion":"nombre-empresa","nivel_acceso":"C","contexto_preferido":"organizacional","fecha_nacimiento":null,"ultimo_contacto":"2026-01-01","notas":"Descripción del rol"}
 ```
 
 ### Paciente con Contexto Médico
 ```json
-{"numero":"+5214423246714","nombre":"Cristóbal Escárcega Rincón","roles":["paciente"],"rol_primario":"paciente","nivel_acceso":"C","contexto_preferido":"medico","fecha_nacimiento":"1952-07-16","ultimo_contacto":"2026-02-10","notas":"⚠️ ALÉRGICO A SULFAS (Trimetoprim-sulfametoxazol). Diagnóstico: Hipertensión arterial, dolor neuropático (neuralgia). Receta: Gabapentina 300mg 2x/día + Losartan 50/Hidroclorotiazida 12.5 1x/día."}
+{"numero":"+521XXXXXXXXXX","nombre":"Paciente Ejemplo","roles":["paciente"],"rol_primario":"paciente","nivel_acceso":"C","contexto_preferido":"medico","fecha_nacimiento":"1960-01-01","ultimo_contacto":"2026-01-01","notas":"⚠️ Alergias y condiciones relevantes. Diagnóstico: [condición]. Medicamentos: [lista]."}
 ```
 
-### Otro Agente
+### Agente IA
 ```json
-{"numero":"+5214426406066","nombre":"Iris","roles":["colaborador"],"rol_primario":"colaborador","organizacion":null,"nivel_acceso":"A","contexto_preferido":"organizacional","fecha_nacimiento":"2026-02-04","ultimo_contacto":"2026-02-06","notas":"Asistente de IA - Raspberry Pi 5"}
+{"numero":"+521XXXXXXXXXX","nombre":"NombreAgente","roles":["colaborador"],"rol_primario":"colaborador","organizacion":null,"nivel_acceso":"A","contexto_preferido":"organizacional","fecha_nacimiento":"2026-01-01","ultimo_contacto":"2026-01-01","notas":"Agente de IA - descripción"}
 ```
 
 ## Instrucciones de Uso
@@ -99,56 +87,32 @@ Script bash que proporciona interfaz segura para gestionar contactos sin necesid
 ./contact-update list
 ```
 
-Output:
-```
-Asistente Dra Segura (+5214465219551)
-Asistente Hermano - Gateway: http://100.107.30.22:18789 (+5214426586883)
-Dr. Juan Manuel Fraga Sastrias (+5214422581157)
-...
-```
-
 ### 2. Obtener Detalles de un Contacto
 
 ```bash
-./contact-update get "+5214422581157"
-```
-
-Output:
-```json
-{
-  "numero": "+5214422581157",
-  "nombre": "Dr. Juan Manuel Fraga Sastrias",
-  "roles": ["familia"],
-  "rol_primario": "familia",
-  ...
-}
+./contact-update get "+521XXXXXXXXXX"
 ```
 
 ### 3. Agregar un Nuevo Contacto
 
 ```bash
-./contact-update add "+5215551234567" "María García" "1990-05-15" "María"
+./contact-update add "+521XXXXXXXXXX" "Nombre Apellido" "1990-05-15" "Apodo"
 ```
-
-Esto crea un contacto con:
-- `rol_primario`: "cliente_potencial"
-- `nivel_acceso`: "C"
-- `contexto_preferido`: "medico"
 
 ### 4. Editar un Campo de Contacto
 
 ```bash
 # Campo texto simple
-./contact-update edit "+5214422581157" "notas" "Actualizado: médico principal"
+./contact-update edit "+521XXXXXXXXXX" "notas" "Notas actualizadas"
 
 # Cambiar rol primario
-./contact-update edit "+5215551234567" "rol_primario" "colaborador"
+./contact-update edit "+521XXXXXXXXXX" "rol_primario" "colaborador"
 
 # Actualizar roles (array JSON)
-./contact-update edit "+5215551234567" "roles" '["amiga","colaboradora"]'
+./contact-update edit "+521XXXXXXXXXX" "roles" '["amigo","colaborador"]'
 
 # Cambiar fecha de último contacto
-./contact-update edit "+5215551234567" "ultimo_contacto" "2026-03-20"
+./contact-update edit "+521XXXXXXXXXX" "ultimo_contacto" "2026-03-20"
 ```
 
 ## Integración para Otros Agentes
@@ -157,47 +121,36 @@ Esto crea un contacto con:
 
 ```bash
 # Buscar contacto por número
-grep "\"numero\":\"+5214422581157\"" /home/jmfraga/.openclaw/workspace-iris-assistant/contacts.jsonl | jq .
+grep "\"numero\":\"+521XXXXXXXXXX\"" /ruta/a/contacts.jsonl | jq .
 
 # Listar todos los contactos de un rol específico
-jq 'select(.roles[] | contains("familia"))' /home/jmfraga/.openclaw/workspace-iris-assistant/contacts.jsonl
+jq 'select(.roles[] | contains("familia"))' /ruta/a/contacts.jsonl
 ```
 
 ### Opción 2: Usar el Script contact-update
 
-Copia el script `contact-update` a tu workspace y úsalo con la ruta absoluta del archivo `contacts.jsonl`:
-
 ```bash
-# En tu agente, editar contact-update para apuntar a la ruta correcta
+# Editar contact-update para apuntar a tu ruta de contacts.jsonl
 sed -i 's|CONTACTS_FILE=.*|CONTACTS_FILE="/ruta/a/contacts.jsonl"|' contact-update
 
 # Luego usar normalmente
 ./contact-update list
 ```
 
-### Opción 3: Implementar en tu Agente
-
-Analiza el script `contact-update` para inspirarte en cómo implementar gestión de contactos en tu propio agente. La lógica principal:
-
-1. **Validar JSON**: Usar `jq empty` para verificar sintaxis
-2. **Backup automático**: Guardar versiones anteriores antes de cambios
-3. **Transacciones**: Usar archivos temporales para evitar corrupción
-4. **Metadata temporal**: Actualizar `ultimo_contacto` automáticamente
-
 ## Compatibilidad
 
 - **Formato**: JSONL (compatible con jq, Python, Node.js)
 - **Requisitos**: `jq` (para validación de JSON)
 - **Bash**: Compatible con bash 4.0+
-- **Plataforma**: Desarrollado en Linux (Raspberry Pi ARM64)
+- **Plataforma**: Desarrollado en Linux (ARM64)
 
 ## Notas de Seguridad
 
-- El archivo `contacts.jsonl` contiene información personal sensible, médica e identificable
+- El archivo `contacts.jsonl` contiene información personal sensible — **nunca subir al repositorio**
 - Nivel de acceso "A" = información privada, "C" = información de cliente
 - Las notas pueden incluir diagnósticos médicos, alergias, identificadores personales
 - Mantener backups regulares (el script `contact-update` lo hace automáticamente)
-- No compartir el archivo completo sin revisar sensibilidad de datos
+- Agregar `contacts.jsonl` al `.gitignore` del proyecto
 
 ## Autor y Historia
 
