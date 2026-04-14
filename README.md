@@ -143,6 +143,22 @@ This repository documents real solutions to real problems encountered during Ope
 
 ---
 
+### 🔐 [Security Audit](security-audit/)
+**Problem:** In multi-agent platforms, security drift is gradual and invisible. Platform updates change paths and profiles, but agent configs stay stale — creating gaps that agents exploit by taking the path of least resistance.
+
+**Solution:** An 8-phase audit framework covering version deltas, config integrity, credentials, exec permissions, plugins/MCPs, agent instructions, scheduled jobs, and denied execution logs.
+
+**Key Features:**
+- 8-phase structured audit (version delta → denied exec logs)
+- Automated biweekly execution via independent CLI agent
+- State tracking with SHA256 hashes for drift detection
+- Real-world lessons from a 12-agent production incident (unauthorized GitHub repo creation)
+- Designed so the auditor is independent of the audited system
+
+**Status:** ✅ Production | **Impact:** Proactive security governance, catches drift before incidents
+
+---
+
 ---
 
 ### 🎓 [SimCert — Certificate Generator](https://github.com/jmfraga/simcert) *(separate repo)*
@@ -226,7 +242,8 @@ Each solution is self-contained with:
 5. Add **Cost Tracker** (API spend visibility)
 6. Add **Agents Config** (keep agent dashboards accurate)
 7. Review **MCP Google Workspace** (auth failure patterns)
-8. Deploy **SimCert** for certificate issuance
+8. Implement **Security Audit** (governance and drift detection)
+9. Deploy **SimCert** for certificate issuance
 
 ## 🎓 Philosophy
 
