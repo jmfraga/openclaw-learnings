@@ -4,7 +4,7 @@
 
 ### 1. Tarjetas Expandibles
 
-- [ ] Abrir dashboard en http://100.71.128.102:8081
+- [ ] Abrir dashboard en http://<tailscale-ip>:8081
 - [ ] Click en cualquier tarjeta
 - [ ] Verificar que se abre el modal
 - [ ] Verificar que se muestra:

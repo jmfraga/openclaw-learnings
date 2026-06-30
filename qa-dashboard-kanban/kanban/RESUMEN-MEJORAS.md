@@ -1,7 +1,7 @@
 # 🎯 MEJORAS AL KANBAN QA - COMPLETADAS
 
 **Fecha**: 13 febrero 2026  
-**Dashboard**: http://100.71.128.102:8081  
+**Dashboard**: http://<tailscale-ip>:8081  
 **Status**: ✅ LISTO PARA PROBAR
 
 ---
@@ -39,7 +39,7 @@
 ## 🚀 Cómo Probar
 
 ### Tarjetas Expandibles
-1. Abre http://100.71.128.102:8081
+1. Abre http://<tailscale-ip>:8081
 2. Click en cualquier tarjeta
 3. Verás modal con todos los detalles
 4. Click en X o fuera del modal para cerrar
@@ -62,10 +62,10 @@
 
 ```bash
 # Ver configuración actual
-curl http://100.71.128.102:8081/api/config | jq '.tokenBudget'
+curl http://<tailscale-ip>:8081/api/config | jq '.tokenBudget'
 
 # Cambiar config
-curl -X POST http://100.71.128.102:8081/api/config \
+curl -X POST http://<tailscale-ip>:8081/api/config \
   -H "Content-Type: application/json" \
   -d '{"weeklyLimit": 60000, "warningThreshold": 0.8, "criticalThreshold": 0.95}'
 

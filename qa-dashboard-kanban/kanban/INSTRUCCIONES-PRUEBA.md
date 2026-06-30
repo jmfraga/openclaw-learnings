@@ -1,6 +1,6 @@
 # 🎯 Instrucciones de Prueba - Kanban QA Dashboard
 
-**Dashboard**: http://100.71.128.102:8081
+**Dashboard**: http://<tailscale-ip>:8081
 
 ---
 
@@ -9,7 +9,7 @@
 ### 1. Tarjetas Expandibles (1 min)
 
 **Pasos:**
-1. Abre http://100.71.128.102:8081
+1. Abre http://<tailscale-ip>:8081
 2. Busca la tarjeta roja "Database connection timeout in PM"
 3. Haz **click en la tarjeta**
 4. **Verifica que se abre un modal** con:
@@ -99,13 +99,13 @@ cat ~/.openclaw/workspace-argus/kanban-qa/config/agents-config.json | jq '.token
 
 ```bash
 # Kanban data (5 tareas)
-curl http://100.71.128.102:8081/api/kanban | jq '.tasks | length'
+curl http://<tailscale-ip>:8081/api/kanban | jq '.tasks | length'
 
 # Token usage (12500)
-curl http://100.71.128.102:8081/api/tokens | jq '.weeklyUsed'
+curl http://<tailscale-ip>:8081/api/tokens | jq '.weeklyUsed'
 
 # Config (75000)
-curl http://100.71.128.102:8081/api/config | jq '.tokenBudget.weeklyLimit'
+curl http://<tailscale-ip>:8081/api/config | jq '.tokenBudget.weeklyLimit'
 ```
 
 ---

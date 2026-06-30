@@ -303,7 +303,7 @@ workspace-pm/
 ### Para Juan Ma
 
 **Interfaces visibles**:
-- Dashboard: http://100.71.128.102:8081/
+- Dashboard: http://<tailscale-ip>:8081/
 - Kanban board con badges de severidad
 - Error rate panel con tendencia
 

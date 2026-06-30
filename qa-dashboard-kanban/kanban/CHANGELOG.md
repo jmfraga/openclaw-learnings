@@ -105,4 +105,4 @@ curl -X POST http://localhost:8081/api/config \
 ---
 
 **Status**: ✅ LISTO PARA PROBAR
-**Dashboard**: http://100.71.128.102:8081
+**Dashboard**: http://<tailscale-ip>:8081

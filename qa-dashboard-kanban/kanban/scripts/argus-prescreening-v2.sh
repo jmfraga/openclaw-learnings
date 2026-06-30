@@ -203,7 +203,7 @@ EOF
             "Task #$task_id created
 Issues: ${#issues[@]}
 Severity: $severidad
-Review dashboard: http://100.71.128.102:8080/qa/" 2>/dev/null || true
+Review dashboard: http://<tailscale-ip>:8080/qa/" 2>/dev/null || true
     fi
 }
 

@@ -1,5 +1,14 @@
 # OpenClaw Learnings
 
+> **Nota (jun 2026) — estado del proyecto.** Dejamos de usar OpenClaw en nuestro ecosistema.
+> La decisión fue para tener **mayor control sobre nuestros agentes**: los migramos a agentes
+> **enfocados a tareas específicas** en lugar de generalistas (como OpenClaw). Un agente generalista
+> es muy capaz, pero tiene **más puntos frágiles**; los especializados resultan más predecibles y
+> robustos en producción. Dejamos este repositorio **público** por si estos aprendizajes le sirven
+> a otros usuarios de OpenClaw.
+
+
+
 Collection of production-ready solutions and patterns developed while working with OpenClaw AI agents.
 
 ## 📚 What's Inside
@@ -188,8 +197,8 @@ This repository documents real solutions to real problems encountered during Ope
 ### Hardware
 | Machine | Tailscale IP | Role |
 |---|---|---|
-| Raspberry Pi (main) | `100.71.128.102` | Hub, cert-server, contact manager, all agents |
-| Mac Mini M1 | `100.107.30.22` | Cloudflare Tunnel, Python API (api.medexpert.mx) |
+| Raspberry Pi (main) | `<tailscale-ip>` | Hub, cert-server, contact manager, all agents |
+| Mac Mini M1 | `<tailscale-ip>` | Cloudflare Tunnel, Python API (api.medexpert.mx) |
 
 ### Agents
 | Agent | Model | Role |

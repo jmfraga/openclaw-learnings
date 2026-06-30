@@ -3,7 +3,7 @@
 **Fecha**: 13 febrero 2026, 17:12 CST  
 **Subagente**: Argus  
 **Status**: ✅ LISTO PARA PRODUCCIÓN  
-**Dashboard**: http://100.71.128.102:8081
+**Dashboard**: http://<tailscale-ip>:8081
 
 ---
 
@@ -158,7 +158,7 @@ kanban-qa/
 ## 🚀 Cómo Probar (Prueba Rápida - 3 min)
 
 1. **Tarjetas Expandibles** (1 min):
-   - Abre http://100.71.128.102:8081
+   - Abre http://<tailscale-ip>:8081
    - Click en tarjeta "Database connection timeout"
    - Verifica modal con detalles + timeline
    - Cierra con X
@@ -214,7 +214,7 @@ kanban-qa/
 **Prioridad cumplida**: Media-Alta → ✅ COMPLETADA  
 **Tiempo estimado**: 2-3 horas → ✅ CUMPLIDO (~2 horas)
 
-**Dashboard funcional en**: http://100.71.128.102:8081
+**Dashboard funcional en**: http://<tailscale-ip>:8081
 
 **Todas las mejoras solicitadas están implementadas y verificadas.**  
 Sistema listo para que Juan Ma lo pruebe y dé feedback. 👁️

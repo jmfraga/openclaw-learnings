@@ -11,7 +11,7 @@ cd /home/jmfraga/.openclaw/workspace-pm/hub/qa
 python3 server.py &
 
 # 3. Access dashboard
-# http://100.71.128.102:8081/
+# http://<tailscale-ip>:8081/
 ```
 
 ---
